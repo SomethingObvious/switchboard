@@ -47,6 +47,11 @@ def test_accepted_stops_at_the_first_miss(guesses, wants, kept):
             "Tensor library for machine learning has released version 1.0.0. Additionally, Vulkan got faster.",
             ["Vulkan"],
         ),
+        (
+            "IceWM, a window manager for the X Window System",
+            "Designed for speed, IceWM is a window manager. Recently, Openbox got faster.",
+            ["Openbox"],
+        ),
     ],
 )
 def test_invented_finds_only_made_up_names(title, answer, new):

@@ -59,8 +59,9 @@ class Trace(TypedDict):
 def read(title: str, opening: str) -> str:
     # Asked to explain a headline alone, a model this small makes the story up, so it is given the story's opening.
     return (
-        f'Rewrite the text below as the first three sentences of a news article headlined "{title}". Begin '
-        f"with who or what the news is about, and use only facts from the text.\n\n{opening}"
+        f'Rewrite the text below as the first three sentences of a news article headlined "{title}". Don\'t '
+        "repeat the headline. Begin with who or what the news is about, and use only facts from the text.\n\n"
+        f"{opening}"
     )
 
 
@@ -76,8 +77,8 @@ def ask(title: str) -> str:
 def invented(shown: str, answer: str) -> list[str]:
     """The names and numbers in `answer` that `shown` doesn't have, which the model can only have made up.
 
-    A name is a capitalised word, unless it opens a sentence and is one of the common words that do, or is followed
-    by a comma there, as linking words like "Additionally," are.
+    A name is a capitalised word, unless it opens a sentence and is one of the common words that do, is followed
+    by a comma there, as linking words like "Additionally," are, or ends the way "Designed" and "Recently" do.
     """
     # ponytail: capital letters and digits are all it looks at, so something made up in lower case gets past it.
 
@@ -90,7 +91,7 @@ def invented(shown: str, answer: str) -> list[str]:
         sentence = re.sub(r"^\s*(\d+[.)]|[-*])\s*", "", said)
         linking = re.match(r"[^\W\d_]+,", sentence)
         for at, word in enumerate(WORD.findall(sentence)):
-            opener = at == 0 and (linking or word.lower() in OPENERS)
+            opener = at == 0 and (linking or word.lower() in OPENERS or word.endswith(("ed", "ly")))
             named = word[0].isdigit() or (word[0].isupper() and not opener)
             if named and word != "I" and bare(word) not in known:
                 found.append(word)
