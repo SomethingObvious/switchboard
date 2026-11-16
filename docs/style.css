@@ -222,8 +222,11 @@ a:hover {
 [aria-current] > .num {
   color: var(--ink);
 }
+/* The date arrives with the day's run, so it has room for the longest one and moves nothing when it does. */
 .running > span {
   color: var(--soft);
+  min-width: 10.5em;
+  text-align: right;
 }
 
 main {
@@ -393,6 +396,34 @@ label.f output {
   margin-bottom: 8px;
 }
 
+/* Over Figure 1, the story the day's run wrote up, the way a newspaper dates and heads its front page. */
+.dateline {
+  margin-bottom: 16px;
+}
+.kicker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font: 700 13px / 1.5 var(--sans);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+#d-when {
+  color: var(--soft);
+}
+.story {
+  font: 700 clamp(26px, 2.4vw, 34px) / 1.15 var(--serif);
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+.story a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+
 /* Figures */
 .fig {
   margin: 0;
@@ -509,25 +540,21 @@ canvas {
     background-size: 0 3px;
   }
 }
+.opening ~ *,
 #figure-1 :is(.out-box, .race, .callouts),
-#figure-1 > :not(.sheet),
-.opening ~ * {
+#figure-1 > * {
   transition: opacity 0.3s ease-out;
 }
 /* Every figure takes its size from a file the page has to fetch, so what would be pushed down waits unseen and
-   never shows in one place and then in another. Under Figure 1's box that is until its run is known, and after
-   the opening it is until all four figures are laid out. With scripts off nothing waits. If a script fails and
-   never sizes them, it all shows itself after 8 seconds, and that has to hold with reduced motion too. */
+   never shows in one place and then in another. Figure 1 waits whole until its run is known, as the story's
+   headline over it can take one line or three, and after the opening the rest waits until all four figures are
+   laid out. With scripts off nothing waits. If a script fails and never sizes them, it all shows itself after 8
+   seconds, and that has to hold with reduced motion too. */
 @media (scripting: enabled) {
-  #figure-1.unsized :is(.race, .callouts),
-  #figure-1.unsized > :not(.sheet),
-  .opening.unsized ~ * {
+  .opening.unsized ~ *,
+  #figure-1.unsized > * {
     opacity: 0;
     animation: late 0.01s 8s forwards !important;
-  }
-  /* The rule under the sheet would be seen dropping as well, so it is left off until then. */
-  #figure-1.unsized .sheet {
-    border-image-width: 1 1 0;
   }
 }
 @keyframes late {

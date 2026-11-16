@@ -42,20 +42,6 @@
   <nav aria-label="Figures"><a href="#draft"><span class="num">1</span>Guessing</a><a href="#route"><span class="num">2</span>Routing</a><a href="#quant"><span class="num">3</span>Rounding</a><a href="#lens"><span class="num">4</span>Lens</a></nav>
   <span><time id="issued"></time></span>
 </header>
-<script>
-  // Pages sends the deploy time as Last-Modified, so the running head dates itself, with the day it was in Toronto.
-  // This runs here and not with the rest so that the date is there in the first frame.
-  {
-    const issued = new Date(document.lastModified);
-    const day = document.getElementById("issued");
-    if (!Number.isNaN(issued.getTime())) {
-      const toronto = { timeZone: "America/Toronto" };
-      day.textContent = issued.toLocaleDateString("en-CA", { ...toronto, dateStyle: "long" });
-      // Canadian English writes a plain date year first with hyphens, which is the form the attribute takes.
-      day.dateTime = issued.toLocaleDateString("en-CA", toronto);
-    }
-  }
-</script>
 
 <main>
 <div class="opening unsized" id="draft">
@@ -71,6 +57,10 @@
   </div>
 
   <figure id="figure-1" class="fig unsized">
+    <div class="dateline" id="d-dateline" hidden>
+      <p class="kicker"><span id="d-kicker"></span><span id="d-when"></span></p>
+      <p class="story"><a id="d-story"></a></p>
+    </div>
     <div class="sheet">
       <div class="models" aria-hidden="true">
         <span><b>EAGLE-3 head</b> guesses</span>

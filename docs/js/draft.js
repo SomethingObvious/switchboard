@@ -178,11 +178,54 @@ function reserve(steps) {
   $("d-room").replaceChildren(...layers);
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const toronto = (at, style) =>
+  at.toLocaleDateString("en-CA", { timeZone: "America/Toronto", ...(style && { dateStyle: style }) });
+
+/** A run's day ("16 Nov 2026", in Toronto) as a date at noon there, or null. */
+function dayOf(day) {
+  const [d, m, y] = day?.split(" ") ?? [];
+  const at = new Date(Date.UTC(Number(y), MONTHS.indexOf(m), Number(d), 17));
+  return Number.isNaN(at.getTime()) || !MONTHS.includes(m) ? null : at;
+}
+
+/** Dates the running head with the day the recorded run was written, or the deploy when it has no day. */
+function issue(trace) {
+  const at = dayOf(trace?.headline?.day) ?? new Date(document.lastModified);
+  if (Number.isNaN(at.getTime())) return;
+  $("issued").textContent = toronto(at, "long");
+  // Canadian English writes a plain date year first with hyphens, which is the form the attribute takes.
+  $("issued").dateTime = toronto(at);
+}
+
+/** Heads the figure with the story the run wrote up and its day, or says what else the figure is showing. */
+function dateline({ prompt, timing, headline }) {
+  const at = dayOf(headline?.day);
+  let [kicker, when, title, link] = ["A saved run", "", prompt, null];
+  if (timing.device === "this GPU") {
+    [kicker, when] = ["Your prompt", "This GPU, just now"];
+  } else if (headline && at) {
+    // A visit before the day's run has started still shows yesterday's, which must not call itself today's.
+    const fresh = toronto(at) === toronto(new Date());
+    const rank = headline.place > 1 ? `number ${headline.place}` : "top";
+    kicker = `${fresh ? "Today's" : "The latest"} ${rank} Hacker News story`;
+    [when, title, link] = [toronto(at, "long"), headline.title, headline.link];
+  }
+  $("d-kicker").textContent = kicker;
+  $("d-when").textContent = when;
+  $("d-story").textContent = title;
+  if (link) $("d-story").href = link;
+  else $("d-story").removeAttribute("href");
+  $("d-dateline").hidden = false;
+}
+
 /**
  * Lays out everything a run will fill before any of it shows, so the figure is its final size from the first token.
  * Returns how many times real speed the run plays at.
  */
-function stage({ steps, timing }) {
+function stage(trace) {
+  const { steps, timing } = trace;
+  dateline(trace);
   reserve(steps);
   // The whole answer is laid out now and each token only shown once it is written, so the box is its final size
   // and no word is seen to move when the rest of it arrives.
@@ -696,19 +739,14 @@ const recorded = () => {
 async function replay(keepStatus = false) {
   try {
     const trace = await recorded();
-    const who = `${trace.target.split("/").pop()}, its ${trace.draft} guessing up to ${trace.depth} tokens a pass`;
-    const { title, link, day, how, place = 1 } = trace.headline ?? {};
-    const said = title
-      ? [
-          // The top story's site can turn the workflow away, and the run is then of the next it could read.
-          `Today's ${place > 1 ? `number ${place}` : "top"} Hacker News headline${day ? ` (${day})` : ""}, `,
-          Object.assign(document.createElement("a"), { href: link, textContent: title }),
-          // A day the story couldn't be read, the model only asks about its headline.
-          how === "read"
-            ? `, written up from the story's opening by ${who}.`
-            : `, and three questions about it from ${who}.`,
-        ]
-      : `A recorded run by ${who}.`;
+    const model = trace.target.split("/").pop();
+    const guessing = `its ${trace.draft} guessing up to ${trace.depth} tokens a pass`;
+    // A day the story couldn't be read, the model only asks about its headline.
+    const said =
+      {
+        read: `${model} read the story's opening and wrote it up as news, ${guessing}.`,
+        asked: `${model} couldn't read the story, so it asks three questions about the headline, ${guessing}.`,
+      }[trace.headline?.how] ?? `A recorded run by ${model}, ${guessing}.`;
     await play(trace, keepStatus ? null : said);
   } catch (error) {
     status(`Couldn't load the recorded run (${error.message}).`);
@@ -764,8 +802,11 @@ export function initDraft() {
   // The box takes the recorded run's size as soon as the run is known, before it scrolls into view and plays.
   // Until then the stylesheet keeps what sits under the box unseen.
   recorded()
-    .then((trace) => state.started || stage(trace))
-    .catch(() => {})
+    .then((trace) => {
+      issue(trace);
+      return state.started || stage(trace);
+    })
+    .catch(() => issue())
     // The page's own type can wrap the text onto one more line, so the size isn't known until it has arrived.
     .then(() => Promise.race([document.fonts.ready, sleep(1500)]))
     .finally(() => $("figure-1").classList.remove("unsized"));
