@@ -13,6 +13,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv run --group dev ruff check
       - run: uv run --group dev ruff format --check
+      - run: uv run --group dev mypy
       - run: uv run --group dev pytest -q
       # The banners in assets/ must match what the saved traces draw.
       - run: |

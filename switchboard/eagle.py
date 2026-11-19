@@ -66,7 +66,7 @@ class Head:
 
     @property
     def done(self) -> int:
-        return self.k.shape[1]
+        return int(self.k.shape[1])
 
     def keep(self, n: int) -> None:
         self.k, self.v = self.k[:, :n], self.v[:, :n]
@@ -160,7 +160,7 @@ def guessed(
     start = clock(dev)
     logits, states = big.feed(prompt, states=True)
     seq = [*prompt, int(logits[-1].argmax())]
-    passes = [([], 0, seq[-1], clock(dev) - start)]
+    passes: list[tuple[list[int], int, int, float]] = [([], 0, seq[-1], clock(dev) - start)]
     while seq[-1] not in stop and len(seq) - len(prompt) < most:
         start, base = clock(dev), len(seq)
         # Catch the head up on the big model's real states, then let it run on its own output.
@@ -173,6 +173,7 @@ def guessed(
             odds *= logits[-1].float().softmax(-1).max().item()
         head.keep(real)
         logits, states = big.feed(seq + guesses, states=True)
+        assert states is not None
         wants = logits[-(len(guesses) + 1) :].argmax(-1).tolist()
         kept = accepted(guesses, wants)
         # A kept guess can end the answer, and nothing guessed after it counts.

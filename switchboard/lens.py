@@ -36,7 +36,9 @@ def trace() -> Trace:
     model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).eval()
     seen: list[torch.Tensor] = []
 
-    def hook(_module: torch.nn.Module, _inputs: tuple, out: torch.Tensor | tuple) -> None:
+    def hook(
+        _module: torch.nn.Module, _inputs: tuple[object, ...], out: torch.Tensor | tuple[torch.Tensor, ...]
+    ) -> None:
         seen.append(out[0] if isinstance(out, tuple) else out)
 
     for layer in model.model.layers:

@@ -2,7 +2,7 @@
 
 import itertools
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import NamedTuple, NotRequired, TypedDict
 
 from . import pieces
@@ -146,7 +146,7 @@ def trace(prompt: str = PROMPT) -> Trace:
     with torch.inference_mode():
         passes = eagle.guessed(big, head, ids, DEPTH, MOST, stop, SURE)  # the first run of each warms up
         n = sum(kept + 1 for _, kept, _, _ in passes)
-        eagle.alone(big, ids, n)
+        written, _ = eagle.alone(big, ids, n)
         spec, solo = [], []
         for _ in range(RUNS):
             spec.append([s for *_, s in eagle.guessed(big, head, ids, DEPTH, MOST, stop, SURE)])
@@ -283,7 +283,8 @@ def render(t: Trace) -> str:
     # The alone run writes underneath on the same clock. The trace only keeps the guessed run's tokens,
     # which are the alone run's too when the texts match.
     bottom = max(lowest, *(p.y for p in spots))
-    split, ry, small_at = len(body), bottom + 70, {}
+    split, ry = len(body), bottom + 70
+    small_at: dict[float, float] = {}
     if timing["same"]:
         ay = bottom + 44
         body += [
@@ -334,12 +335,13 @@ def render(t: Trace) -> str:
 
     fy = by + 14 + (tall + 1) * 18 + 40
     kx = 60.0
-    for draw, numeral, label in [
+    key: list[tuple[Callable[[float], str], int, str]] = [
         (lambda x: rect(x, fy - 15, 22, 16, stroke=INK, dash="4 3"), 102, "guessed by the head"),
         (lambda x: rect(x, fy - 15, 22, 16, stroke=INK), 104, "kept by the big model"),
         (lambda x: rect(x, fy - 15, 22, 16, stroke=LOST, width=2, dash="4 3"), 106, "first miss, thrown away"),
         (lambda x: line(x, fy, x + 22, fy, INK, 3), 108, "the big model's own token"),
-    ]:
+    ]
+    for draw, numeral, label in key:
         entry, width = callout(kx, fy, draw(kx), numeral, label)
         body.append(entry)
         kx += width + 34

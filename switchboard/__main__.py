@@ -80,11 +80,11 @@ def main() -> None:
             f"Today's {'top' if place == 1 else f'number {place}'} Hacker News headline ({day}), routed live "
             "through IBM Granite 3.0 1B-A400M. Each token goes to 8 of 32 experts in every one of 24 layers."
         )
-        t = route.trace([title])
-        t["headline"] = {"day": day, "link": link, "place": place}
-        save(args.headline, route.render(t, subtitle))
+        r = route.trace([title])
+        r["headline"] = {"day": day, "link": link, "place": place}
+        save(args.headline, route.render(r, subtitle))
         # The page reads this to put the headline first in Figure 2.
-        args.headline.with_suffix(".json").write_text(json.dumps(t), encoding="utf-8")
+        args.headline.with_suffix(".json").write_text(json.dumps(r), encoding="utf-8")
     else:
         module = {"route": route, "draft": draft}[args.banner]
         data = DATA / f"{args.banner}.json"

@@ -54,7 +54,7 @@ def trace(sentences: Sequence[str] = SENTENCES) -> Trace:
     k = model.config.num_experts_per_tok
     seen: list[Layer] = []
 
-    def hook(_module: torch.nn.Module, _inputs: tuple, logits: torch.Tensor) -> None:
+    def hook(_module: torch.nn.Module, _inputs: tuple[object, ...], logits: torch.Tensor) -> None:
         top, experts = torch.topk(logits.float(), k, dim=-1)
         weights = [[round(w, 4) for w in row] for row in torch.softmax(top, -1).tolist()]
         seen.append({"experts": experts.tolist(), "weights": weights})
@@ -77,14 +77,14 @@ def headline() -> tuple[str, str, int]:
     Some sites turn a script away, and it is the top story when all ten do.
     """
 
-    def get(url: str) -> dict | list:
+    def get(url: str) -> bytes:
         with urllib.request.urlopen(url, timeout=30) as r:
-            return json.load(r)
+            return r.read()
 
-    tops = get("https://hacker-news.firebaseio.com/v0/topstories.json")[:10]
+    tops: list[int] = json.loads(get("https://hacker-news.firebaseio.com/v0/topstories.json"))[:10]
     links = [f"https://news.ycombinator.com/item?id={top}" for top in tops]
     place = next((at for at, link in enumerate(links) if story(link)), 0)
-    title = get(f"https://hacker-news.firebaseio.com/v0/item/{tops[place]}.json")["title"]
+    title: str = json.loads(get(f"https://hacker-news.firebaseio.com/v0/item/{tops[place]}.json"))["title"]
     return title, links[place], place + 1
 
 

@@ -38,4 +38,4 @@ uv run --extra export python -m switchboard routes       # the 8-bit router mode
 uv run --extra export python -m switchboard head         # the two graphs Figure 1 runs in the browser
 ```
 
-The page in `docs/` is plain ES modules with no build step, served by GitHub Pages. CI runs Ruff, pytest and Biome, and fails if a committed banner doesn't match its trace.
+The page in `docs/` is plain ES modules with no build step, served by GitHub Pages. CI runs Ruff, mypy, pytest and Biome, and fails if a committed banner doesn't match its trace.

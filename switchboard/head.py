@@ -232,7 +232,8 @@ def head(w: dict[str, "np.ndarray"]) -> "onnx.ModelProto":
     import numpy as np
     from onnx import TensorProto, helper, numpy_helper
 
-    nodes, consts = [], []
+    nodes: list[onnx.NodeProto] = []
+    consts: list[onnx.TensorProto] = []
 
     def op(kind: str, inputs: list[str], name: str = "", domain: str = "", **attrs: object) -> str:
         name = name or f"{kind}_{len(nodes)}"
@@ -289,7 +290,7 @@ def head(w: dict[str, "np.ndarray"]) -> "onnx.ModelProto":
     def info(name: str, shape: list[int | str], kind: int = TensorProto.FLOAT16) -> "onnx.ValueInfoProto":
         return helper.make_tensor_value_info(name, kind, shape)
 
-    cache = [1, 8, "entries", 128]
+    cache: list[int | str] = [1, 8, "entries", 128]
     graph = helper.make_graph(
         nodes,
         "head",
@@ -483,12 +484,15 @@ def _feed(
     return got
 
 
-def read(session: "ort.InferenceSession", cache: dict[str, "np.ndarray"], prompt: list[int], rows: int) -> dict:
+def read(
+    session: "ort.InferenceSession", cache: dict[str, "np.ndarray"], prompt: list[int], rows: int
+) -> dict[str, "np.ndarray"]:
     """Reads the prompt `rows` tokens a pass, the last pass starting early to stay whole.
 
     Rows read twice are written over with the same values, as the cache is the same up to them.
     """
     starts = [*range(0, len(prompt) - rows, rows), len(prompt) - rows]
+    got: dict[str, np.ndarray] = {}
     for at in starts:
         nexts = [prompt[i + 1] if i + 1 < len(prompt) else None for i in range(at, at + rows)]
         got = _feed(session, cache, prompt[at : at + rows], at, nexts)
@@ -504,7 +508,7 @@ def guessed(
     seq = [*prompt, int(got["wants"][0, -1])]
     # The pass that read the prompt has one guess to give, and it fills every guess row of the first pass.
     guesses = [int(got["guesses"][0, -1])] * (ROWS - 1)
-    passes = [([], 0, seq[-1])]
+    passes: list[tuple[list[int], int, int]] = [([], 0, seq[-1])]
     while seq[-1] not in stop and len(seq) - len(prompt) < most:
         got = _feed(session, cache, [seq[-1], *guesses], len(seq) - 1)
         wants = got["wants"][0].tolist()

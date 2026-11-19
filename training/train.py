@@ -85,7 +85,7 @@ def unroll(feats: torch.Tensor, tokens: torch.Tensor) -> list[torch.Tensor]:
     return outs
 
 
-def step(row: dict, train: bool) -> tuple[torch.Tensor, list[float], int]:
+def step(row: dict[str, list[int]], train: bool) -> tuple[torch.Tensor, list[float], int]:
     tokens = torch.tensor(row["prompt"] + row["answer"], device=dev)
     with torch.no_grad():
         out = big(tokens[None], output_hidden_states=True)
@@ -106,7 +106,7 @@ def step(row: dict, train: bool) -> tuple[torch.Tensor, list[float], int]:
     return loss / K, hits, e
 
 
-def evaluate(rows: list[dict]) -> list[float]:
+def evaluate(rows: list[dict[str, list[int]]]) -> list[float]:
     total = [0.0] * K
     with torch.no_grad():
         for row in rows:
@@ -140,7 +140,7 @@ started, s, seen = time.perf_counter(), 0, 0
 for epoch in range(EPOCHS):
     random.shuffle(train)
     for row in train:
-        loss, _, _ = step(row, True)
+        loss = step(row, True)[0]
         (loss / ACCUM).backward()
         seen += 1
         if seen % ACCUM == 0:

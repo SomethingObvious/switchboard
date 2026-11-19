@@ -16,7 +16,7 @@ big = AutoModelForCausalLM.from_pretrained(draft.TARGET, dtype=torch.bfloat16).t
 items = json.loads(Path(src).read_text(encoding="utf-8"))
 
 
-def chat(item: dict) -> list[int]:
+def chat(item: dict[str, str]) -> list[int]:
     text = draft.ask(item["text"]) if item["kind"] == "hn" else item["text"]
     s = tok.apply_chat_template(
         [{"role": "user", "content": text}], tokenize=False, add_generation_prompt=True, enable_thinking=False

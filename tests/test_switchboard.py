@@ -15,7 +15,7 @@ DATA = Path(__file__).resolve().parent.parent / "docs" / "data"
     ("guesses", "wants", "kept"),
     [([1, 2, 3], [1, 2, 3, 4], 3), ([1, 2, 3], [1, 9, 3, 4], 1), ([5, 2], [1, 2, 3], 0), ([], [7], 0)],
 )
-def test_accepted_stops_at_the_first_miss(guesses, wants, kept):
+def test_accepted_stops_at_the_first_miss(guesses: list[int], wants: list[int], kept: int) -> None:
     assert draft.accepted(guesses, wants) == kept
 
 
@@ -54,11 +54,11 @@ def test_accepted_stops_at_the_first_miss(guesses, wants, kept):
         ),
     ],
 )
-def test_invented_finds_only_made_up_names(title, answer, new):
+def test_invented_finds_only_made_up_names(title: str, answer: str, new: list[str]) -> None:
     assert draft.invented(title, answer) == new
 
 
-def test_opening_is_a_pages_first_real_paragraphs():
+def test_opening_is_a_pages_first_real_paragraphs() -> None:
     first = "The chief executive told staff on Thursday that he would leave at the end of the year. " * 2
     page = (
         '<html><head><meta property="og:description" content="A short note that says what the page is about, '
@@ -72,13 +72,13 @@ def test_opening_is_a_pages_first_real_paragraphs():
     assert route.opening("<p>Too little to sum up.</p>") == ""
 
 
-def test_layout_wraps_and_drops_the_leading_space():
+def test_layout_wraps_and_drops_the_leading_space() -> None:
     placed = draft.layout(["Hello", " world", " again"], 0, 0, 12 * 11)
     assert [(p.y, p.text) for p in placed] == [(0, "Hello"), (0, " world"), (draft.LINE_H, "again")]
     assert placed[2].x == 0
 
 
-def test_timeline_keyframes_cover_the_whole_loop():
+def test_timeline_keyframes_cover_the_whole_loop() -> None:
     tl = Timeline(10.0)
     assert tl.show("a", 2.5, 5.0) == "a"
     css = tl.css()
@@ -86,7 +86,7 @@ def test_timeline_keyframes_cover_the_whole_loop():
     assert "animation:a 10.0s linear infinite" in css
 
 
-def test_reduced_motion_shows_what_the_loop_ends_on():
+def test_reduced_motion_shows_what_the_loop_ends_on() -> None:
     tl = Timeline(10.0)
     tl.show("gone", 1.0, 4.0)
     tl.show("kept", 2.0, 9.0, lit=0.3, out=1.0)
@@ -99,7 +99,7 @@ def test_reduced_motion_shows_what_the_loop_ends_on():
 
 
 @pytest.mark.parametrize("name", ["route", "draft"])
-def test_saved_traces_render(name):
+def test_saved_traces_render(name: str) -> None:
     path = DATA / f"{name}.json"
     if not path.exists():
         pytest.skip(f"{path.name} not traced yet")
@@ -107,7 +107,7 @@ def test_saved_traces_render(name):
     assert svg.startswith("<svg") and svg.endswith("</svg>")
 
 
-def test_route_trace_is_consistent():
+def test_route_trace_is_consistent() -> None:
     t = json.loads((DATA / "route.json").read_text(encoding="utf-8"))
     for run in t["runs"]:
         for layer in run["layers"]:
@@ -116,7 +116,7 @@ def test_route_trace_is_consistent():
             assert all(abs(sum(w) - 1) < 1e-3 for w in layer["weights"])
 
 
-def test_spell_puts_a_split_character_on_the_token_that_finishes_it():
+def test_spell_puts_a_split_character_on_the_token_that_finishes_it() -> None:
     rocket = "\N{ROCKET}"
     raw = rocket.encode()
     assert spell([b"Launch", b" " + raw[:2], raw[2:3], raw[3:]]) == ["Launch", r" \xF0\x9F", r"\x9A", rocket]
@@ -126,12 +126,12 @@ def test_spell_puts_a_split_character_on_the_token_that_finishes_it():
     assert spell([b" " + raw[:2], b" sky"]) == [r" \xF0\x9F", " sky"]
 
 
-def test_saved_traces_have_no_replacement_characters():
+def test_saved_traces_have_no_replacement_characters() -> None:
     for name in ["route", "draft", "quant", "lens"]:
         assert "\N{REPLACEMENT CHARACTER}" not in (DATA / f"{name}.json").read_text(encoding="utf-8")
 
 
-def test_rounding_keeps_each_groups_ends_and_errs_by_half_a_step_at_most():
+def test_rounding_keeps_each_groups_ends_and_errs_by_half_a_step_at_most() -> None:
     torch = pytest.importorskip("torch")
     w = torch.linspace(-1, 1, 256).reshape(2, 128)
     out = quant.rounded(w, quant.Format("int4", 4, 128))
@@ -142,7 +142,7 @@ def test_rounding_keeps_each_groups_ends_and_errs_by_half_a_step_at_most():
     assert torch.equal(quant.rounded(w, quant.FORMATS[0]), w)
 
 
-def test_lens_trace_has_every_layer_at_every_position_likeliest_first():
+def test_lens_trace_has_every_layer_at_every_position_likeliest_first() -> None:
     t = json.loads((DATA / "lens.json").read_text(encoding="utf-8"))
     for run in t["runs"]:
         assert len(run["layers"]) == 28
@@ -153,7 +153,7 @@ def test_lens_trace_has_every_layer_at_every_position_likeliest_first():
                 assert probs == sorted(probs, reverse=True) and sum(probs) <= 1.0001
 
 
-def test_the_page_quantizes_the_lm_head_as_onnxruntime_does(tmp_path):
+def test_the_page_quantizes_the_lm_head_as_onnxruntime_does(tmp_path: Path) -> None:
     np = pytest.importorskip("numpy")
     pytest.importorskip("onnxruntime")
     if not shutil.which("node"):

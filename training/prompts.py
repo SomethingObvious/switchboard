@@ -15,10 +15,10 @@ NOW = int(time.time())
 HOLD = NOW - 3 * 86400  # titles from the last three days are only for testing
 
 
-def get(url: str) -> dict:
+def get(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": "switchboard-training"})
     with urllib.request.urlopen(req, timeout=60) as r:
-        return json.load(r)
+        return r.read()
 
 
 titles: dict[str, int] = {}
@@ -28,7 +28,7 @@ while len(titles) < 6000:
         "https://hn.algolia.com/api/v1/search_by_date?tags=story&hitsPerPage=1000"
         f"&numericFilters=points>40,created_at_i<{before}"
     )
-    hits = page["hits"]
+    hits = json.loads(page)["hits"]
     if not hits:
         break
     for h in hits:
@@ -37,7 +37,7 @@ while len(titles) < 6000:
     before = min(h["created_at_i"] for h in hits)
     print(len(titles), "titles back to", time.strftime("%Y-%m-%d", time.gmtime(before)))
 
-files = get("https://huggingface.co/api/datasets/OpenAssistant/oasst1/tree/main/data")
+files: list[dict[str, str]] = json.loads(get("https://huggingface.co/api/datasets/OpenAssistant/oasst1/tree/main/data"))
 name = next(f["path"] for f in files if f["path"].endswith(".parquet") and "train" in f["path"])
 local = OUT / "oasst1-train.parquet"
 urllib.request.urlretrieve(f"https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/{name}", local)
